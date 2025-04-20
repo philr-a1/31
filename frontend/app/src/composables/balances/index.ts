@@ -4,6 +4,7 @@ import { TaskType } from '@/types/task-type';
 import type { AssetPrices } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import { useSessionStore } from '@/store/session';
 
 export const useBalances = createSharedComposable(() => {
   const { updatePrices: updateManualPrices, fetchManualBalances } = useManualBalancesStore();
@@ -20,6 +21,7 @@ export const useBalances = createSharedComposable(() => {
   const { t } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
   const { fetchNetValue } = useStatisticsStore();
+  const { logged } = storeToRefs(useSessionStore().authStore);
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
     const pricesConvertedToUsd = { ...get(prices) };
@@ -121,7 +123,9 @@ export const useBalances = createSharedComposable(() => {
 
   // TODO: This is temporary fix for double conversion issue. Future solutions should try to eliminate this part.
   watch(currency, async () => {
-    await refreshPrices(true);
+    if (get(logged)) {
+      await refreshPrices(true);
+    }
   });
 
   return {
